@@ -1,104 +1,115 @@
-**zad 2**
+### Rozwiązania dla zadań:
 
-XML:
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+---
 
-    <ListView
-        android:id="@+id/listView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
+### **2. Przesyłanie danych między ekranami**
+#### **Kroki do wykonania:**
+1. W Android Studio utwórz projekt z **Empty View Activity**.
+2. Na pierwszym ekranie dodaj:
+   - EditText (do wprowadzania imienia).
+   - Button z napisem "Dalej".
+3. Na drugim ekranie dodaj TextView do wyświetlania powitania.
+4. Użyj **Intent** do przekazania imienia z pierwszego ekranu na drugi.
 
-    <Button
-        android:id="@+id/addButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Dodaj"/>
+#### **Kod:**
+##### Pierwszy ekran (MainActivity):
+```java
+Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+intent.putExtra("userName", userNameEditText.getText().toString());
+startActivity(intent);
+```
 
-</LinearLayout>
+##### Drugi ekran (SecondActivity):
+```java
+String userName = getIntent().getStringExtra("userName");
+welcomeTextView.setText("Witaj, " + userName + "!");
+```
 
+---
 
-KT:
-import android.os.Bundle
-import android.widget.ArrayAdapter
-import android.widget.ListView
-import androidx.appcompat.app.AppCompatActivity
+### **3. Tworzenie prostego kalkulatora**
+#### **Kroki do wykonania:**
+1. W Android Studio utwórz projekt z **Empty Activity**.
+2. Na pierwszym ekranie dodaj:
+   - Dwa EditTexty (na liczby).
+   - Cztery przyciski do operacji matematycznych.
+3. Przekaż dane i operację na drugi ekran za pomocą **Intent**.
+4. Na drugim ekranie oblicz wynik i wyświetl go.
 
-class MainActivity : AppCompatActivity() {
-    private lateinit var listView: ListView
-    private lateinit var shoppingList: MutableList<String>
-    private lateinit var adapter: ArrayAdapter<String>
+#### **Kod:**
+##### Pierwszy ekran (MainActivity):
+```java
+Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+intent.putExtra("num1", Integer.parseInt(editText1.getText().toString()));
+intent.putExtra("num2", Integer.parseInt(editText2.getText().toString()));
+intent.putExtra("operation", "add"); // Można zmienić na "subtract", "multiply", "divide"
+startActivity(intent);
+```
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+##### Drugi ekran (ResultActivity):
+```java
+int num1 = getIntent().getIntExtra("num1", 0);
+int num2 = getIntent().getIntExtra("num2", 0);
+String operation = getIntent().getStringExtra("operation");
 
-        listView = findViewById(R.id.listView)
-        shoppingList = mutableListOf("Jabłka", "Chleb", "Mleko", "Masło")
-        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, shoppingList)
-        listView.adapter = adapter
-    }
+int result = 0;
+switch (operation) {
+    case "add": result = num1 + num2; break;
+    case "subtract": result = num1 - num2; break;
+    case "multiply": result = num1 * num2; break;
+    case "divide": 
+        result = num2 != 0 ? num1 / num2 : 0; 
+        break;
 }
 
+resultTextView.setText("Wynik: " + result);
+```
 
-**zad3**
+---
 
-KT:
+### **4. Tworzenie aplikacji notatnika**
+#### **Kroki do wykonania:**
+1. Użyj **RecyclerView** do listy notatek.
+2. Zapewnij funkcjonalność zapisu danych w lokalnej pamięci (np. **SharedPreferences**, **Room Database**).
+3. Umożliwiaj edycję i usuwanie notatek.
+4. Użyj EditText do edycji, przycisku „Zapisz” i RecyclerView do przeglądania listy.
 
-import android.app.AlertDialog
-import android.widget.Button
-import android.widget.EditText
+---
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+### **5. Tworzenie aplikacji pogodowej z API**
+#### **Kroki do wykonania:**
+1. Zarejestruj się na [OpenWeatherMap](https://openweathermap.org/) i uzyskaj klucz API.
+2. Użyj **Retrofit** lub **Volley** do komunikacji z API.
+3. Na ekranie głównym umożliw użytkownikowi wprowadzenie miasta.
+4. Pobierz i wyświetl dane (np. temperaturę, wilgotność, opis).
 
-        val addButton: Button = findViewById(R.id.addButton)
-        addButton.setOnClickListener {
-            showAddItemDialog()
+#### **Kod:**
+##### Przykładowa funkcja do pobierania danych:
+```java
+Retrofit retrofit = new Retrofit.Builder()
+        .baseUrl("https://api.openweathermap.org/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build();
+
+WeatherApi weatherApi = retrofit.create(WeatherApi.class);
+Call<WeatherResponse> call = weatherApi.getWeather(cityName, "API_KEY");
+
+call.enqueue(new Callback<WeatherResponse>() {
+    @Override
+    public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+        if (response.isSuccessful()) {
+            WeatherResponse weather = response.body();
+            temperatureTextView.setText("Temp: " + weather.getMain().getTemp() + "°C");
         }
     }
 
-    private fun showAddItemDialog() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Dodaj nowy element")
-
-        val input = EditText(this)
-        builder.setView(input)
-
-        builder.setPositiveButton("Dodaj") { dialog, _ ->
-            val newItem = input.text.toString()
-            if (newItem.isNotEmpty()) {
-                shoppingList.add(newItem)
-                adapter.notifyDataSetChanged()
-            }
-            dialog.dismiss()
-        }
-        builder.setNegativeButton("Anuluj") { dialog, _ -> dialog.cancel() }
-        builder.show()
+    @Override
+    public void onFailure(Call<WeatherResponse> call, Throwable t) {
+        errorTextView.setText("Błąd: " + t.getMessage());
     }
-}
+});
+```
 
-
-**zad4**
-KT:
-listView.setOnItemLongClickListener { _, _, position, _ ->
-    val builder = AlertDialog.Builder(this)
-    builder.setTitle("Usuń element")
-    builder.setMessage("Czy na pewno chcesz usunąć ten element?")
-    builder.setPositiveButton("Tak") { dialog, _ ->
-        shoppingList.removeAt(position)
-        adapter.notifyDataSetChanged()
-        dialog.dismiss()
-    }
-    builder.setNegativeButton("Nie") { dialog, _ -> dialog.cancel() }
-    builder.show()
-    true
-}
+Jeśli potrzebujesz więcej szczegółów lub kodu, daj znać! 😊
 
 
